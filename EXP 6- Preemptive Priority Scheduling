@@ -1,0 +1,67 @@
+#include <stdio.h>
+
+struct Process {
+    int pid;            // Process ID
+    int bt;             // Burst Time
+    int priority;       // Priority (lower number = higher priority)
+    int at;             // Arrival Time
+    int rt;             // Remaining Time
+};
+
+int main() {
+    int n, i, time = 0, completed = 0, min_priority_index;
+    float total_wt = 0, total_tat = 0;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    struct Process p[n];
+
+    // Input process details
+    for(i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Enter Arrival Time, Burst Time and Priority for P%d: ", i + 1);
+        scanf("%d %d %d", &p[i].at, &p[i].bt, &p[i].priority);
+        p[i].rt = p[i].bt;  // Initialize remaining time
+    }
+
+    printf("\nGantt Chart: \n");
+
+    while(completed < n) {
+        min_priority_index = -1;
+        int min_priority = 10000; // Large value
+
+        // Find the process with highest priority at this time
+        for(i = 0; i < n; i++) {
+            if(p[i].at <= time && p[i].rt > 0) {
+                if(p[i].priority < min_priority) {
+                    min_priority = p[i].priority;
+                    min_priority_index = i;
+                }
+            }
+        }
+
+        if(min_priority_index == -1) {
+            time++; // No process ready, increment time
+        } else {
+            printf("| P%d ", p[min_priority_index].pid);
+            p[min_priority_index].rt--;  // Execute for 1 unit
+            time++;
+
+            if(p[min_priority_index].rt == 0) {
+                completed++;
+                int tat = time - p[min_priority_index].at;       // Turnaround Time
+                int wt = tat - p[min_priority_index].bt;         // Waiting Time
+                total_tat += tat;
+                total_wt += wt;
+            }
+        }
+    }
+
+    printf("|\n");
+
+    printf("\nAverage Turnaround Time = %.2f\n", total_tat / n);
+    printf("Average Waiting Time = %.2f\n", total_wt / n);
+
+    return 0;
+}
