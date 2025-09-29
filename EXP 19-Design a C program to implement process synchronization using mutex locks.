@@ -1,0 +1,49 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+#define NUM_THREADS 3
+
+int counter = 0;                // Shared resource
+pthread_mutex_t mutex;          // Mutex for synchronization
+
+void* increment(void* arg) {
+    int id = *((int*)arg);
+
+    for(int i = 0; i < 5; i++) {
+        pthread_mutex_lock(&mutex); // Enter critical section
+
+        counter++; // Update shared resource
+        printf("Thread %d incremented counter to %d\n", id, counter);
+
+        pthread_mutex_unlock(&mutex); // Exit critical section
+        sleep(1); // Simulate some processing
+    }
+
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[NUM_THREADS];
+    int thread_ids[NUM_THREADS];
+
+    // Initialize mutex
+    pthread_mutex_init(&mutex, NULL);
+
+    // Create threads
+    for(int i = 0; i < NUM_THREADS; i++) {
+        thread_ids[i] = i + 1;
+        pthread_create(&threads[i], NULL, increment, &thread_ids[i]);
+    }
+
+    // Wait for threads to finish
+    for(int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    // Destroy mutex
+    pthread_mutex_destroy(&mutex);
+
+    printf("Final counter value: %d\n", counter);
+    return 0;
+}
