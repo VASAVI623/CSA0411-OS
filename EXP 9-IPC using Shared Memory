@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <string.h>
+
+int main() {
+    int shm_id;
+    char *shared_memory;
+    const int SIZE = 1024;  // Size of shared memory
+
+    // Create shared memory segment
+    shm_id = shmget(IPC_PRIVATE, SIZE, IPC_CREAT | 0666);
+    if (shm_id < 0) {
+        perror("shmget failed");
+        exit(1);
+    }
+
+    // Fork a child process
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("fork failed");
+        exit(1);
+    }
+
+    if (pid == 0) {  // Child process
+        // Attach to shared memory
+        shared_memory = (char *)shmat(shm_id, NULL, 0);
+        if (shared_memory == (char *)-1) {
+            perror("shmat failed in child");
+            exit(1);
+        }
+
+        // Read data from shared memory
+        printf("Child Process: Read from shared memory -> %s\n", shared_memory);
+
+        // Detach from shared memory
+        shmdt(shared_memory);
+        exit(0);
+    } else {  // Parent process
+        // Attach to shared memory
+        shared_memory = (char *)shmat(shm_id, NULL, 0);
+        if (shared_memory == (char *)-1) {
+            perror("shmat failed in parent");
+            exit(1);
+        }
+
+        // Write data to shared memory
+        strcpy(shared_memory, "Hello from Parent Process!");
+
+        // Wait for child to finish
+        wait(NULL);
+
+        // Detach and remove shared memory
+        shmdt(shared_memory);
+        shmctl(shm_id, IPC_RMID, NULL);
+
+        printf("Parent Process: Data written to shared memory and cleaned up.\n");
+    }
+
+    return 0;
+}
