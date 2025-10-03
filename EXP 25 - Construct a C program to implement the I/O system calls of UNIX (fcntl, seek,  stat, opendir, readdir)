@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <string.h>
+
+int main() {
+    int fd, dupfd;
+    char buffer[100];
+    struct stat fileStat;
+
+    // 1. Create and open file
+    fd = open("demo.txt", O_CREAT | O_RDWR | O_TRUNC, 0777);
+    if (fd < 0) {
+        perror("File open failed");
+        exit(1);
+    }
+    write(fd, "Hello UNIX I/O System Calls!", 28);
+    printf("File 'demo.txt' created and data written.\n");
+
+    // 2. fcntl() - duplicate file descriptor
+    dupfd = fcntl(fd, F_DUPFD, 0);
+    if (dupfd < 0) {
+        perror("fcntl failed");
+        exit(1);
+    }
+    printf("File descriptor duplicated using fcntl().\n");
+
+    // 3. lseek() - move file pointer to beginning and read
+    lseek(fd, 0, SEEK_SET);
+    int bytesRead = read(fd, buffer, sizeof(buffer)-1);
+    if (bytesRead < 0) {
+        perror("Read failed");
+        exit(1);
+    }
+    buffer[bytesRead] = '\0';
+    printf("Data read using lseek(): %s\n", buffer);
+
+    // 4. stat() - get file information
+    if (stat("demo.txt", &fileStat) < 0) {
+        perror("stat failed");
+        exit(1);
+    }
+    printf("\nFile information using stat():\n");
+    printf("File Size: %ld bytes\n", fileStat.st_size);
+    printf("Number of Links: %ld\n", fileStat.st_nlink);
+    printf("File Permissions: %o\n", fileStat.st_mode & 0777);
+
+    // 5. opendir() and readdir() - list directory contents
+    DIR *dir;
+    struct dirent *entry;
+    dir = opendir(".");
+    if (dir == NULL) {
+        perror("opendir failed");
+        exit(1);
+    }
+    printf("\nDirectory listing using opendir() and readdir():\n");
+    while ((entry = readdir(dir)) != NULL) {
+        printf("%s\n", entry->d_name);
+    }
+    closedir(dir);
+
+    // Close file descriptors
+    close(fd);
+    close(dupfd);
+
+    return 0;
+}
