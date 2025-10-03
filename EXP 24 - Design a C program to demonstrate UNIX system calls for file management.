@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int main() {
+    int fd;
+    char buffer[100];
+    ssize_t bytesRead, bytesWritten;
+
+    // 1. Create or open a file
+    fd = creat("demo.txt", 0777); // rwx for owner, group, others
+    if (fd < 0) {
+        perror("File creation failed");
+        exit(1);
+    }
+    printf("File 'demo.txt' created successfully.\n");
+    close(fd);
+
+    // Reopen the file for read/write
+    fd = open("demo.txt", O_RDWR);
+    if (fd < 0) {
+        perror("File open failed");
+        exit(1);
+    }
+    printf("File opened successfully.\n");
+
+    // 2. Write to file
+    char msg[] = "Hello, this is a UNIX system call demo.\n";
+    bytesWritten = write(fd, msg, sizeof(msg));
+    if (bytesWritten < 0) {
+        perror("Write failed");
+        exit(1);
+    }
+    printf("Data written to file.\n");
+
+    // 3. Move file pointer to beginning
+    lseek(fd, 0, SEEK_SET);
+
+    // 4. Read from file
+    bytesRead = read(fd, buffer, sizeof(buffer));
+    if (bytesRead < 0) {
+        perror("Read failed");
+        exit(1);
+    }
+    buffer[bytesRead] = '\0';  // Null terminate string
+    printf("Data read from file: %s\n", buffer);
+
+    // 5. Close file
+    close(fd);
+    printf("File closed successfully.\n");
+
+    return 0;
+}
